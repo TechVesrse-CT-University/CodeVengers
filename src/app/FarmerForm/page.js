@@ -119,7 +119,7 @@ const FarmerForm = () => {
 
     try {
       for (let i = 0; i < textList.length; i++) {
-        const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=AIzaSyBu4cCDX4FMG2-xfsfRFub2JPAAZRib1B8`, {
+        const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${process.env.Google_Cloud_API}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -145,7 +145,7 @@ const FarmerForm = () => {
   const speakText = async (text) => {
     const lang = langCode[language] || 'en-US';
     const response = await fetch(
-      `https://texttospeech.googleapis.com/v1/text:synthesize?key=AIzaSyDTV1dseIcCW-uxE_lrxGmKLejafnBXFBU`,
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.Google_TTS_API}`,
       {
         method: "POST",
         headers: {
@@ -204,7 +204,7 @@ const FarmerForm = () => {
       setForm(prev => ({ ...prev, lat, lon }));
 
       try {
-        const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=3a5de73cf9724756854d5d580698e35c`);
+        const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${process.env.OpenCage_API}`);
         const data = await res.json();
         const state = data.results?.[0]?.components?.state;
         const district = data.results?.[0]?.components?.state_district;
