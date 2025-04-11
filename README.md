@@ -1,6 +1,9 @@
+## KisaanMitra (Agriculture)
+A revolutionary portal for a farmer wherein just by getting the live location of the farmer with minimal inputs from them, by fetching Real time data from OpenWeather, Historical climate Average data from NASA and soil data from SoilGrids API by ISRIC (International Soil Reference and Information Centre), providing highly accurate and reliable data to predict the best possible Crop to sow for the farmer. Our ML model predicts the crops from 21 features all hand picked by us (yes we created our dataset) by fetching real time data of those features. 
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+
 
 First, run the development server:
 
