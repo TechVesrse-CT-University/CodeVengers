@@ -1,6 +1,3 @@
-
-
-
 'use client';
 import React, { useEffect, useState, } from 'react';
 import { MapPin, Droplet, CloudRain, Crop, Phone, Leaf, Volume2 } from 'lucide-react';
@@ -545,14 +542,6 @@ const FarmerForm = () => {
                 />
               </div>
             </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="border-t pt-6">
-            <SectionTitle 
-              icon={<Phone className="h-5 w-5 text-green-600" />} 
-              title={labels.contactSection} 
-            />
           </div>
 
           <div className="pt-6 border-t">

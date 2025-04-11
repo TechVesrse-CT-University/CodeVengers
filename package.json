@@ -10,9 +10,15 @@
   },
   "dependencies": {
     "lucide-react": "^0.487.0",
+    
+    "axios": "^1.8.4",
+    "csv-stringify": "^6.5.2",
+    "csv-writer": "^1.6.0",
+    "json2csv": "^6.0.0-alpha.2",
     "next": "15.3.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
