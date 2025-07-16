@@ -1,115 +1,120 @@
-'use client';
-import React, { useEffect, useState, } from 'react';
-import { MapPin, Droplet, CloudRain, Crop, Phone, Leaf, Volume2 } from 'lucide-react';
+"use client";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { MapPin, Droplet, CloudRain, Crop, Leaf, Volume2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const stateToLanguage = {
-  "Maharashtra": "Marathi",
+  Maharashtra: "Marathi",
   "Tamil Nadu": "Tamil",
-  "Karnataka": "Kannada",
+  Karnataka: "Kannada",
   "West Bengal": "Bengali",
   "Uttar Pradesh": "Hindi",
-  "Kerala": "Malayalam",
-  "Gujarat": "Gujarati",
-  "Telangana": "Telugu",
-  "Punjab": "Punjabi",
-  "Rajasthan": "Hindi",
-  "Bihar": "Hindi",
-  "Delhi": "Hindi",
+  Kerala: "Malayalam",
+  Gujarat: "Gujarati",
+  Telangana: "Telugu",
+  Punjab: "Punjabi",
+  Rajasthan: "Hindi",
+  Bihar: "Hindi",
+  Delhi: "Hindi",
 };
 
 const defaultLabels = {
-  name: 'Name',
-  state: 'State',
-  district: 'District',
-  lat: 'Latitude',
-  lon: 'Longitude',
-  soilType: 'Soil Type',
-  soilPH: 'Soil PH',
-  farmSize: 'Farm Size (Acres)',
-  currentCrop: 'Current Crop',
-  preferredCrop: 'Preferred Crop',
-  budget: 'Budget (₹)',
-  irrigationAvailable: 'Irrigation Available?',
-  rainDependent: 'Rain Dependent?',
-  language: 'Language',
-  contactNumber: 'Contact Number',
-  speechInput: 'Voice Input',
-  formTitle: 'Farmer Information',
-  locationSection: 'Location Details',
-  farmSection: 'Farm Characteristics',
-  cropSection: 'Crop Information',
-  contactSection: 'Contact Information',
-  submitButton: 'Get Crop Recommendations'
+  name: "Name",
+  state: "State",
+  district: "District",
+  lat: "Latitude",
+  lon: "Longitude",
+  soilType: "Soil Type",
+  soilPH: "Soil PH",
+  farmSize: "Farm Size (Acres)",
+  currentCrop: "Current Crop",
+  preferredCrop: "Preferred Crop",
+  budget: "Budget (₹)",
+  irrigationAvailable: "Irrigation Available?",
+  rainDependent: "Rain Dependent?",
+  language: "Language",
+  contactNumber: "Contact Number",
+  speechInput: "Voice Input",
+  formTitle: "Farmer Information",
+  locationSection: "Location Details",
+  farmSection: "Farm Characteristics",
+  cropSection: "Crop Information",
+  contactSection: "Contact Information",
+  submitButton: "Get Crop Recommendations",
 };
 
 const langCodeMap = {
-  Hindi: 'hi',
-  Tamil: 'ta',
-  Kannada: 'kn',
-  Bengali: 'bn',
-  Malayalam: 'ml',
-  Telugu: 'te',
-  Marathi: 'gu',
-  Punjabi: 'pa',
-  Marathi: 'mr',
-  English: 'en'
+  Hindi: "hi",
+  Tamil: "ta",
+  Kannada: "kn",
+  Bengali: "bn",
+  Malayalam: "ml",
+  Telugu: "te",
+  Marathi: "gu",
+  Punjabi: "pa",
+  Marathi: "mr",
+  English: "en",
 };
 
 const langCode = {
-  Hindi: 'hi-IN',
-  Bengali: 'bn-IN',
-  Tamil: 'ta-IN',
-  Telugu: 'te-IN',
-  Marathi: 'mr-IN',
-  Marathi: 'gu-IN',
-  Kannada: 'kn-IN',
-  Malayalam: 'ml-IN',
-  Punjabi: 'pa-IN',
-  English: 'en-US',
-  // Add more as needed
+  Hindi: "hi-IN",
+  Bengali: "bn-IN",
+  Tamil: "ta-IN",
+  Telugu: "te-IN",
+  Marathi: "mr-IN",
+  Marathi: "gu-IN",
+  Kannada: "kn-IN",
+  Malayalam: "ml-IN",
+  Punjabi: "pa-IN",
+  English: "en-US",
 };
 
 const soilTypeOptions = [
-  'Alluvial',
-  'Black (Regur)',
-  'Red & Yellow',
-  'Laterite',
-  'Arid/Desert',
-  'Saline',
-  'Peaty/Marshy',
-  'Forest',
-  'Loamy',
-  'Sandy',
-  'Clay',
-  'Silt'
+  "Alluvial",
+  "Black (Regur)",
+  "Red & Yellow",
+  "Laterite",
+  "Arid/Desert",
+  "Saline",
+  "Peaty/Marshy",
+  "Forest",
+  "Loamy",
+  "Sandy",
+  "Clay",
+  "Silt",
 ];
 
 const FarmerForm = () => {
-  const [language, setLanguage] = useState('English');
+  const [language, setLanguage] = useState("English");
   const [labels, setLabels] = useState(defaultLabels);
   const [form, setForm] = useState({
-    name: '',
-    state: '',
-    district: '',
-    lat: '',
-    lon: '',
-    soilType: '',
-    soilPH: '',
-    farmSize: '',
-    currentCrop: '',
-    preferredCrop: '',
-    budget: '',
+    name: "",
+    state: "",
+    district: "",
+    lat: "",
+    lon: "",
+    soilType: "",
+    soilPH: "",
+    farmSize: "",
+    currentCrop: "",
+    preferredCrop: "",
+    budget: "",
     irrigationAvailable: false,
     rainDependent: false,
-    language: '',
-    contactNumber: '',
-    speechInput: ''
+    language: "",
+    contactNumber: "",
+    speechInput: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const results = [];
+  const [features, setFeatures] = useState([]);
+
+  const router = useRouter();
 
   const translateLabels = async (targetLangCode) => {
-    if (targetLangCode === 'en') {
+    if (targetLangCode === "en") {
       setLabels(defaultLabels);
       return;
     }
@@ -119,20 +124,24 @@ const FarmerForm = () => {
 
     try {
       for (let i = 0; i < textList.length; i++) {
-        const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${process.env.Google_Cloud_API}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            q: textList[i],
-            source: "en",
-            target: targetLangCode,
-            format: "text"
-          })
-        });
+        const res = await fetch(
+          `https://translation.googleapis.com/language/translate/v2?key=${process.env.NEXT_PUBLIC_Google_Cloud_API}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              q: textList[i],
+              source: "en",
+              target: targetLangCode,
+              format: "text",
+            }),
+          }
+        );
 
         const data = await res.json();
         const key = Object.keys(defaultLabels)[i];
-        translated[key] = data.data?.translations?.[0]?.translatedText || defaultLabels[key];
+        translated[key] =
+          data.data?.translations?.[0]?.translatedText || defaultLabels[key];
       }
 
       setLabels(translated);
@@ -142,10 +151,100 @@ const FarmerForm = () => {
     }
   };
 
+  async function fetchCombinedFeatures(lat, lon, State = "") {
+    const OPENWEATHER_API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+    console.log(" data : ", lat, lon, State);
+    try {
+      const [soilRes, nasaRes, weatherRes] = await Promise.all([
+        fetch(
+          `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${lon}&lat=${lat}`
+        ),
+        axios.get(
+          `https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M,PRECTOTCORR,ALLSKY_SFC_SW_DWN,RH2M,WS2M&community=ag&longitude=${lon}&latitude=${lat}&format=JSON`
+        ),
+        Promise.allSettled([
+          fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+          ),
+          fetch(
+            `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`
+          ),
+          fetch(
+            `http://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`
+          ),
+        ]),
+      ]);
+
+      const soilData = await soilRes.json();
+
+      const climateData = nasaRes.data?.properties?.parameter;
+
+      const [currentRes, forecastRes, airRes] = weatherRes;
+
+      const current =
+        currentRes.status === "fulfilled" ? await currentRes.value.json() : {};
+      const air =
+        airRes.status === "fulfilled" ? await airRes.value.json() : {};
+
+      const layers = soilData?.properties?.layers ?? [];
+      console.log("layers : ", layers);
+
+      function extractLayerValue(layers, name, depth) {
+        const layer = layers.find(
+          (l) => l.name === name && l.depths.find((n) => n.label == depth)
+        );
+        console.log("mean : ", layer);
+        return {
+          mean: layer?.depths?.[0]?.values?.mean ?? null,
+          uncertainty: layer?.depths?.[0]?.values?.uncertainty ?? null,
+        };
+      }
+
+      results.push({
+        lat,
+        lon,
+        temperature: current?.main?.temp ?? null,
+        humidity: current?.main?.humidity ?? null,
+        pressure: current?.main?.pressure ?? null,
+        wind_speed: current?.wind?.speed ?? null,
+        aqi: air?.list?.[0]?.main?.aqi ?? null,
+        State,
+
+        // Climate
+        Avg_Temperature: climateData?.T2M?.ANN ?? null,
+        Avg_Rainfall: climateData?.PRECTOTCORR?.ANN ?? null,
+        Avg_Radiation: climateData?.ALLSKY_SFC_SW_DWN?.ANN ?? null,
+        Avg_Humidity: climateData?.RH2M?.ANN ?? null,
+        Avg_Wind_Speed: climateData?.WS2M?.ANN ?? null,
+
+        // Soil
+        pH: extractLayerValue(layers, "phh2o", "0-5cm").mean,
+        Organic_Carbon: extractLayerValue(layers, "ocd", "0-5cm").mean,
+        Nitrogen: extractLayerValue(layers, "nitrogen", "0-5cm").mean,
+        Bulk_Density: extractLayerValue(layers, "bdod", "0-5cm").mean,
+        Cation_Exchange: extractLayerValue(layers, "cec", "0-5cm").mean,
+        Sand: extractLayerValue(layers, "sand", "0-5cm").mean,
+        Silt: extractLayerValue(layers, "silt", "0-5cm").mean,
+        Clay: extractLayerValue(layers, "clay", "0-5cm").mean,
+      });
+
+      console.log("results : ", results);
+      setFeatures(results[0]);
+      setForm((prev) => {
+        return {
+          ...prev,
+          soilPH: results[0].pH,
+        };
+      });
+    } catch (error) {
+      results.push({ lat, lon, error: error.message });
+    }
+  }
+
   const speakText = async (text) => {
-    const lang = langCode[language] || 'en-US';
+    const lang = langCode[language] || "en-US";
     const response = await fetch(
-      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.Google_TTS_API}`,
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.NEXT_PUBLIC_Google_TTS_API}`,
       {
         method: "POST",
         headers: {
@@ -163,9 +262,9 @@ const FarmerForm = () => {
         }),
       }
     );
-  
+
     const data = await response.json();
-  
+
     if (data.audioContent) {
       const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
       audio.play();
@@ -177,13 +276,18 @@ const FarmerForm = () => {
   // Field label component with speaker icon
   const FieldLabel = ({ htmlFor, text }) => (
     <div className="flex items-center justify-between mb-2">
-      <label className="block text-gray-700 text-sm font-bold" htmlFor={htmlFor}>
+      <label
+        className="block text-gray-700 text-sm font-bold"
+        htmlFor={htmlFor}
+      >
         {text}
       </label>
-      <button 
+      <button
         type="button"
         onClick={() => speakText(text)}
-        className={`p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${isSpeaking ? 'text-green-600' : 'text-gray-500'}`}
+        className={`p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${
+          isSpeaking ? "text-green-600" : "text-gray-500"
+        }`}
         title="Listen to field name"
         aria-label={`Listen to ${text}`}
       >
@@ -197,34 +301,41 @@ const FarmerForm = () => {
       setIsLoading(false);
       return;
     }
+    let lat, lon, state;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
+        setForm((prev) => ({ ...prev, lat, lon }));
 
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      setForm(prev => ({ ...prev, lat, lon }));
+        try {
+          const res = await fetch(
+            `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${process.env.NEXT_PUBLIC_OpenCage_API}`
+          );
+          const data = await res.json();
+          state = data.results?.[0]?.components?.state;
+          const district = data.results?.[0]?.components?.state_district;
 
-      try {
-        const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${process.env.OpenCage_API}`);
-        const data = await res.json();
-        const state = data.results?.[0]?.components?.state;
-        const district = data.results?.[0]?.components?.state_district;
-
-        if (state) {
-          const lang = stateToLanguage[state] || 'English';
-          const langCode = langCodeMap[lang] || 'en';
-          setForm(prev => ({ ...prev, state, district, language: lang }));
-          setLanguage(lang);
-          await translateLabels(langCode);
+          if (state) {
+            const lang = stateToLanguage[state] || "English";
+            const langCode = langCodeMap[lang] || "en";
+            setForm((prev) => ({ ...prev, state, district, language: lang }));
+            setLanguage(lang);
+            await translateLabels(langCode);
+          }
+          // fetchCombinedFeatures(lat, lon, state);
+          fetchCombinedFeatures("32.824", "80.7379", state);
+        } catch (error) {
+          console.error("Location error:", error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Location error:", error);
-      } finally {
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
         setIsLoading(false);
       }
-    }, (error) => {
-      console.error("Geolocation error:", error);
-      setIsLoading(false);
-    });
+    );
 
     // Cancel any ongoing speech when component unmounts
     return () => {
@@ -236,18 +347,28 @@ const FarmerForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Process form submission
-    console.log("Form submitted:", form);
-    // Here you would connect to your ML model for crop prediction
-    alert("Form submitted successfully! Processing your crop recommendations...");
+
+    const response = await axios.post("/api/prediction", {
+      features: features,
+    });
+
+    if (response.status == 200) {
+      const prediction = response.data.prediction;
+      alert(
+        "Form submitted successfully! Processing your crop recommendations..."
+      );
+      router.push(`/prediction?data=${prediction.prediction}`);
+    } else {
+      alert("Failed to submit the form. Please try again later.");
+    }
   };
 
   // Speak section title
@@ -255,10 +376,12 @@ const FarmerForm = () => {
     <div className="flex items-center mb-4">
       {icon}
       <h2 className="text-xl font-semibold text-gray-800 ml-2">{title}</h2>
-      <button 
+      <button
         type="button"
         onClick={() => speakText(title)}
-        className={`ml-2 p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${isSpeaking ? 'text-green-600' : 'text-gray-500'}`}
+        className={`ml-2 p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${
+          isSpeaking ? "text-green-600" : "text-gray-500"
+        }`}
         title={`Listen to ${title}`}
         aria-label={`Listen to ${title}`}
       >
@@ -271,7 +394,9 @@ const FarmerForm = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-green-50">
         <div className="w-16 h-16 border-t-4 border-green-600 border-solid rounded-full animate-spin"></div>
-        <p className="mt-4 text-green-800 font-medium">Detecting your location...</p>
+        <p className="mt-4 text-green-800 font-medium">
+          Detecting your location...
+        </p>
       </div>
     );
   }
@@ -288,27 +413,31 @@ const FarmerForm = () => {
             <button
               type="button"
               onClick={() => speakText(labels.formTitle)}
-              className={`p-2 rounded-full hover:bg-green-500 focus:outline-none transition ${isSpeaking ? 'bg-green-500' : ''}`}
+              className={`p-2 rounded-full hover:bg-green-500 focus:outline-none transition ${
+                isSpeaking ? "bg-green-500" : ""
+              }`}
               title="Listen to title"
               aria-label="Listen to title"
             >
               <Volume2 className="h-5 w-5 text-white" />
             </button>
           </div>
-          <p className="mt-2 opacity-90">Fill in your details to get personalized crop recommendations</p>
+          <p className="mt-2 opacity-90">
+            Fill in your details to get personalized crop recommendations
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
           {/* Personal Info */}
           <div className="mb-6">
             <FieldLabel htmlFor="name" text={labels.name} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               id="name"
-              name="name" 
-              value={form.name} 
-              onChange={handleChange} 
-              className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition" 
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition"
               placeholder="Enter your full name"
               required
             />
@@ -316,59 +445,59 @@ const FarmerForm = () => {
 
           {/* Location Section */}
           <div className="border-t pt-6">
-            <SectionTitle 
-              icon={<MapPin className="h-5 w-5 text-green-600" />} 
-              title={labels.locationSection} 
+            <SectionTitle
+              icon={<MapPin className="h-5 w-5 text-green-600" />}
+              title={labels.locationSection}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <FieldLabel htmlFor="state" text={labels.state} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="state"
-                  name="state" 
-                  value={form.state} 
-                  readOnly 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight" 
+                  name="state"
+                  value={form.state}
+                  readOnly
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight"
                 />
               </div>
-              
+
               <div>
                 <FieldLabel htmlFor="district" text={labels.district} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="district"
-                  name="district" 
-                  value={form.district} 
-                  readOnly 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight" 
+                  name="district"
+                  value={form.district}
+                  readOnly
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight"
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
                 <FieldLabel htmlFor="lat" text={labels.lat} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="lat"
-                  name="lat" 
-                  value={form.lat} 
-                  readOnly 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight" 
+                  name="lat"
+                  value={form.lat}
+                  readOnly
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight"
                 />
               </div>
-              
+
               <div>
                 <FieldLabel htmlFor="lon" text={labels.lon} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="lon"
-                  name="lon" 
-                  value={form.lon} 
-                  readOnly 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight" 
+                  name="lon"
+                  value={form.lon}
+                  readOnly
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 bg-gray-100 leading-tight"
                 />
               </div>
             </div>
@@ -376,11 +505,11 @@ const FarmerForm = () => {
 
           {/* Farm Characteristics */}
           <div className="border-t pt-6">
-            <SectionTitle 
-              icon={<Crop className="h-5 w-5 text-green-600" />} 
-              title={labels.farmSection} 
+            <SectionTitle
+              icon={<Crop className="h-5 w-5 text-green-600" />}
+              title={labels.farmSection}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <FieldLabel htmlFor="soilType" text={labels.soilType} />
@@ -393,46 +522,48 @@ const FarmerForm = () => {
                   required
                 >
                   <option value="">Select soil type</option>
-                  {soilTypeOptions.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                  {soilTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <FieldLabel htmlFor="soilPH" text={labels.soilPH} />
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   id="soilPH"
-                  name="soilPH" 
+                  name="soilPH"
                   min="0"
                   max="14"
                   step="0.1"
-                  value={form.soilPH} 
-                  onChange={handleChange} 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition" 
+                  value={form.soilPH}
+                  onChange={handleChange}
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition"
                   placeholder="e.g. 6.5"
                   required
                 />
               </div>
             </div>
-            
+
             <div className="mt-4">
               <FieldLabel htmlFor="farmSize" text={labels.farmSize} />
-              <input 
-                type="number" 
+              <input
+                type="number"
                 id="farmSize"
-                name="farmSize" 
+                name="farmSize"
                 min="0.1"
                 step="0.1"
-                value={form.farmSize} 
-                onChange={handleChange} 
-                className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition" 
+                value={form.farmSize}
+                onChange={handleChange}
+                className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition"
                 placeholder="Enter farm size in acres"
                 required
               />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="flex items-center p-4 border rounded bg-green-50">
                 <input
@@ -443,23 +574,28 @@ const FarmerForm = () => {
                   onChange={handleChange}
                   className="h-5 w-5 text-green-600 rounded focus:ring-green-500"
                 />
-                <label className="ml-2 text-gray-700 flex-grow" htmlFor="irrigationAvailable">
+                <label
+                  className="ml-2 text-gray-700 flex-grow"
+                  htmlFor="irrigationAvailable"
+                >
                   <div className="flex items-center">
                     <Droplet className="h-4 w-4 text-green-600 mr-1" />
                     {labels.irrigationAvailable}
                   </div>
                 </label>
-                <button 
+                <button
                   type="button"
                   onClick={() => speakText(labels.irrigationAvailable)}
-                  className={`p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${isSpeaking ? 'text-green-600' : 'text-gray-500'}`}
+                  className={`p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${
+                    isSpeaking ? "text-green-600" : "text-gray-500"
+                  }`}
                   title={`Listen to ${labels.irrigationAvailable}`}
                   aria-label={`Listen to ${labels.irrigationAvailable}`}
                 >
                   <Volume2 className="h-4 w-4" />
                 </button>
               </div>
-              
+
               <div className="flex items-center p-4 border rounded bg-green-50">
                 <input
                   type="checkbox"
@@ -469,16 +605,21 @@ const FarmerForm = () => {
                   onChange={handleChange}
                   className="h-5 w-5 text-green-600 rounded focus:ring-green-500"
                 />
-                <label className="ml-2 text-gray-700 flex-grow" htmlFor="rainDependent">
+                <label
+                  className="ml-2 text-gray-700 flex-grow"
+                  htmlFor="rainDependent"
+                >
                   <div className="flex items-center">
                     <CloudRain className="h-4 w-4 text-green-600 mr-1" />
                     {labels.rainDependent}
                   </div>
                 </label>
-                <button 
+                <button
                   type="button"
                   onClick={() => speakText(labels.rainDependent)}
-                  className={`p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${isSpeaking ? 'text-green-600' : 'text-gray-500'}`}
+                  className={`p-1 rounded-full hover:bg-green-100 focus:outline-none transition ${
+                    isSpeaking ? "text-green-600" : "text-gray-500"
+                  }`}
                   title={`Listen to ${labels.rainDependent}`}
                   aria-label={`Listen to ${labels.rainDependent}`}
                 >
@@ -490,53 +631,56 @@ const FarmerForm = () => {
 
           {/* Crop Information */}
           <div className="border-t pt-6">
-            <SectionTitle 
-              icon={<Leaf className="h-5 w-5 text-green-600" />} 
-              title={labels.cropSection} 
+            <SectionTitle
+              icon={<Leaf className="h-5 w-5 text-green-600" />}
+              title={labels.cropSection}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <FieldLabel htmlFor="currentCrop" text={labels.currentCrop} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="currentCrop"
-                  name="currentCrop" 
-                  value={form.currentCrop} 
-                  onChange={handleChange} 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition" 
+                  name="currentCrop"
+                  value={form.currentCrop}
+                  onChange={handleChange}
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition"
                   placeholder="What are you growing now?"
                 />
               </div>
-              
+
               <div>
-                <FieldLabel htmlFor="preferredCrop" text={labels.preferredCrop} />
-                <input 
-                  type="text" 
+                <FieldLabel
+                  htmlFor="preferredCrop"
+                  text={labels.preferredCrop}
+                />
+                <input
+                  type="text"
                   id="preferredCrop"
-                  name="preferredCrop" 
-                  value={form.preferredCrop} 
-                  onChange={handleChange} 
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition" 
+                  name="preferredCrop"
+                  value={form.preferredCrop}
+                  onChange={handleChange}
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition"
                   placeholder="Any preferred crop? (optional)"
                 />
               </div>
             </div>
-            
+
             <div className="mt-4">
               <FieldLabel htmlFor="budget" text={labels.budget} />
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <span className="text-gray-500">₹</span>
                 </div>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   id="budget"
-                  name="budget" 
+                  name="budget"
                   min="0"
-                  value={form.budget} 
-                  onChange={handleChange} 
-                  className="shadow appearance-none border rounded w-full py-3 pl-8 pr-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition" 
+                  value={form.budget}
+                  onChange={handleChange}
+                  className="shadow appearance-none border rounded w-full py-3 pl-8 pr-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-green-500 transition"
                   placeholder="Your farming budget"
                   required
                 />
@@ -545,8 +689,8 @@ const FarmerForm = () => {
           </div>
 
           <div className="pt-6 border-t">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition duration-300 flex items-center justify-center"
             >
               <Leaf className="h-5 w-5 mr-2" />
@@ -569,7 +713,10 @@ const FarmerForm = () => {
         <div className="rounded-full bg-blue-100 p-1 mr-2 mt-0.5">
           <Volume2 className="h-4 w-4 text-blue-600" />
         </div>
-        <p>Click on the speaker icon next to any field to hear its name spoken aloud. Speech is available in the selected language.</p>
+        <p>
+          Click on the speaker icon next to any field to hear its name spoken
+          aloud. Speech is available in the selected language.
+        </p>
       </div>
     </div>
   );
